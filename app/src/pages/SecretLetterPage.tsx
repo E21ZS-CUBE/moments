@@ -17,9 +17,19 @@ export function SecretLetterPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
+  // ✍️ NEW STATES (WRITE LETTER)
+  const [isWriting, setIsWriting] = useState(false);
+  const [newLetter, setNewLetter] = useState({
+    title: "",
+    content: "",
+    password: "",
+    sender: "John",
+    receiver: "Melina"
+  });
+
   const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // 🔥 Fetch all letters
+  // 🔥 Fetch letters
   const fetchLetters = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -30,7 +40,7 @@ export function SecretLetterPage() {
 
       setLetters(data);
       setIsLoading(false);
-    } catch (err) {
+    } catch {
       setPageError('Failed to load letters');
       setIsLoading(false);
     }
@@ -72,6 +82,38 @@ export function SecretLetterPage() {
     }
   };
 
+  // ✍️ CREATE LETTER
+  const createLetter = async () => {
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/letters`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newLetter)
+        }
+      );
+
+      if (!res.ok) throw new Error();
+
+      alert("Letter sent 💌");
+
+      setIsWriting(false);
+      setNewLetter({
+        title: "",
+        content: "",
+        password: "",
+        sender: "John",
+        receiver: "Melina"
+      });
+
+      fetchLetters();
+
+    } catch {
+      alert("Error creating letter");
+    }
+  };
+
   // ✨ Typing animation
   useEffect(() => {
     if (
@@ -95,7 +137,7 @@ export function SecretLetterPage() {
     }
   }, [displayedText, openedLetter]);
 
-  // 🔴 Error page
+  // 🔴 Error screen
   if (pageError && !isLoading) {
     return (
       <div className="text-center mt-20">
@@ -110,8 +152,69 @@ export function SecretLetterPage() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-2xl w-full">
 
+        {/* ✍️ WRITE BUTTON */}
+        {!selectedLetter && !isWriting && (
+          <button
+            onClick={() => setIsWriting(true)}
+            className="mb-6 px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl"
+          >
+            Write Letter 💌
+          </button>
+        )}
+
+        {/* ✍️ WRITE UI */}
+        {isWriting && (
+          <div className="glass p-6 rounded-2xl mb-6 space-y-4">
+
+            <h2 className="text-white text-xl">Write a Letter 💌</h2>
+
+            <input
+              placeholder="Title"
+              value={newLetter.title}
+              onChange={(e) =>
+                setNewLetter({ ...newLetter, title: e.target.value })
+              }
+              className="w-full p-2 rounded bg-white/10 text-white"
+            />
+
+            <textarea
+              placeholder="Write your message..."
+              value={newLetter.content}
+              onChange={(e) =>
+                setNewLetter({ ...newLetter, content: e.target.value })
+              }
+              className="w-full p-3 h-40 rounded bg-white/10 text-white"
+            />
+
+            <input
+              placeholder="Password"
+              value={newLetter.password}
+              onChange={(e) =>
+                setNewLetter({ ...newLetter, password: e.target.value })
+              }
+              className="w-full p-2 rounded bg-white/10 text-white"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={createLetter}
+                className="bg-purple-500 px-4 py-2 rounded"
+              >
+                Send 💌
+              </button>
+
+              <button
+                onClick={() => setIsWriting(false)}
+                className="text-white/40"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 🧾 LETTER LIST */}
-        {!selectedLetter && (
+        {!selectedLetter && !isWriting && (
           <div className="space-y-4">
             <h2 className="text-white text-2xl text-center mb-4">
               Your Letters 💌
@@ -132,7 +235,7 @@ export function SecretLetterPage() {
           </div>
         )}
 
-        {/* 🔐 PASSWORD SCREEN */}
+        {/* 🔐 PASSWORD */}
         {selectedLetter && !openedLetter && (
           <div className="text-center">
             <Lock className="mx-auto text-purple-400 mb-4" />
@@ -170,7 +273,7 @@ export function SecretLetterPage() {
           </div>
         )}
 
-        {/* 💌 LETTER VIEW */}
+        {/* 💌 VIEW */}
         {openedLetter && (
           <motion.div className="glass p-8 rounded-2xl">
 
