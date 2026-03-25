@@ -18,24 +18,17 @@ const LetterSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      trim: true,
-      default: 'bite'
+      trim: true
     },
 
-    isActive: {
-      type: Boolean,
-      default: true
-    },
-
-    // 🔥 future-ready fields (optional for now)
     sender: {
       type: String,
-      default: 'unknown'
+      required: true
     },
 
     receiver: {
       type: String,
-      default: 'unknown'
+      required: true
     }
   },
   {
