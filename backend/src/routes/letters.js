@@ -3,58 +3,41 @@ const router = express.Router();
 const Letter = require('../models/Letter');
 
 //
-// GET ACTIVE LETTER (SAFE)
+// GET ALL LETTERS
 //
 router.get('/', async (req, res) => {
   try {
-    const letter = await Letter.findOne({ isActive: true });
+    const letters = await Letter.find().sort({ createdAt: -1 });
 
-    if (!letter) {
-      return res.status(200).json({
-        id: null,
-        title: "No Letter Yet 💌",
-        hasPassword: false
-      });
-    }
-
-    res.json({
-      id: letter._id,
-      title: letter.title,
-      hasPassword: !!letter.password
-    });
-
+    res.json(letters);
   } catch (error) {
-    console.error('Error fetching letter:', error);
-    res.status(500).json({ error: 'Failed to fetch letter' });
+    console.error('Error fetching letters:', error);
+    res.status(500).json({ error: 'Failed to fetch letters' });
   }
 });
 
 //
-// VERIFY PASSWORD
+// VERIFY PASSWORD FOR SPECIFIC LETTER
 //
 router.post('/verify', async (req, res) => {
   try {
-    const { password } = req.body;
+    const { id, password } = req.body;
 
-    if (!password) {
-      return res.status(400).json({ error: 'Password required' });
+    if (!id || !password) {
+      return res.status(400).json({ error: 'Missing fields' });
     }
 
-    const letter = await Letter.findOne({ isActive: true });
+    const letter = await Letter.findById(id);
 
     if (!letter) {
-      return res.status(404).json({ error: 'No letter found' });
+      return res.status(404).json({ error: 'Letter not found' });
     }
 
     if (password !== letter.password) {
       return res.status(401).json({ error: 'Incorrect password' });
     }
 
-    res.json({
-      id: letter._id,
-      title: letter.title,
-      content: letter.content
-    });
+    res.json(letter);
 
   } catch (error) {
     console.error('Error verifying letter:', error);
@@ -67,20 +50,18 @@ router.post('/verify', async (req, res) => {
 //
 router.post('/', async (req, res) => {
   try {
-    const { title, content, password } = req.body;
+    const { title, content, password, sender, receiver } = req.body;
 
-    if (!content) {
-      return res.status(400).json({ error: 'Content is required' });
+    if (!content || !sender || !receiver) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
-
-    // deactivate old letters
-    await Letter.updateMany({}, { isActive: false });
 
     const letter = new Letter({
       title: title || 'Secret Letter 💌',
       content,
       password: password || 'bite',
-      isActive: true
+      sender,
+      receiver
     });
 
     await letter.save();
@@ -100,14 +81,9 @@ router.put('/:id', async (req, res) => {
   try {
     const { title, content, password } = req.body;
 
-    const updateData = {};
-    if (title !== undefined) updateData.title = title;
-    if (content !== undefined) updateData.content = content;
-    if (password !== undefined) updateData.password = password;
-
     const letter = await Letter.findByIdAndUpdate(
       req.params.id,
-      updateData,
+      { title, content, password },
       { new: true }
     );
 
