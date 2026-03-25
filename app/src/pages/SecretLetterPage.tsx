@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Unlock, Heart, AlertCircle, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Lock, AlertCircle } from 'lucide-react';
 
 export function SecretLetterPage() {
   const [letters, setLetters] = useState<any[]>([]);
