@@ -14,7 +14,13 @@ const letterSchema = new mongoose.Schema({
     ref: 'User'
   },
 
-  spaceId: String
+  spaceId: String,
+
+  // ✅ NEW (IMPORTANT)
+  deleted: {
+    type: Boolean,
+    default: false
+  }
 
 }, { timestamps: true });
 
