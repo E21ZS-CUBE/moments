@@ -20,28 +20,39 @@ export function SecretLetterPage() {
   // ✏️ edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // ⚠️ TEMP (replace later with auth)
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = user._id;
+  // ✅ SAFE USER FETCH
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const userId = user?._id;
   const spaceId = "testspace1";
 
-  // 🔥 fetch letters
+  // 🔥 fetch letters (FIXED)
   const fetchLetters = useCallback(async () => {
     try {
+      // ❗ STOP IF USER NOT READY
+      if (!userId) {
+        console.warn("User not logged in yet");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
 
       const res = await fetch(
         `${API}/letters?userId=${userId}&spaceId=${spaceId}`
       );
+
       const data = await res.json();
 
       setLetters(data);
       setIsLoading(false);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setPageError('Failed to load letters');
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchLetters();
@@ -50,20 +61,23 @@ export function SecretLetterPage() {
   // ✉️ SEND / UPDATE LETTER
   const sendLetter = async () => {
     try {
+      if (!userId) {
+        alert("User not logged in");
+        return;
+      }
+
       if (!receiver || !subject || !body) {
         alert("Fill all fields");
         return;
       }
 
       if (editingId) {
-        // UPDATE
         await fetch(`${API}/letters/${editingId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ subject, body })
         });
       } else {
-        // CREATE
         await fetch(`${API}/letters`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -95,7 +109,7 @@ export function SecretLetterPage() {
     setSelectedLetter(null);
   };
 
-  // ✏️ EDIT LOAD
+  // ✏️ EDIT
   const startEdit = (letter: any) => {
     setEditingId(letter._id);
     setReceiver(letter.receiver?.username || '');
@@ -114,7 +128,7 @@ export function SecretLetterPage() {
     setIsWriting(false);
   };
 
-  // 🔴 error screen
+  // 🔴 ERROR UI
   if (pageError && !isLoading) {
     return (
       <div className="text-center mt-20">
@@ -129,8 +143,14 @@ export function SecretLetterPage() {
     <div className="min-h-screen flex justify-center px-4">
       <div className="max-w-2xl w-full">
 
+        {!userId && (
+          <p className="text-red-400 text-center mt-10">
+            Please login first
+          </p>
+        )}
+
         {/* WRITE BUTTON */}
-        {!isWriting && !selectedLetter && (
+        {!isWriting && !selectedLetter && userId && (
           <button
             onClick={() => setIsWriting(true)}
             className="mb-6 px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl"
@@ -187,7 +207,7 @@ export function SecretLetterPage() {
         )}
 
         {/* LIST */}
-        {!selectedLetter && !isWriting && (
+        {!selectedLetter && !isWriting && userId && (
           <div className="space-y-4">
             <h2 className="text-white text-2xl text-center mb-4">
               Letters
