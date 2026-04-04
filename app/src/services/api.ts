@@ -13,7 +13,7 @@ async function fetchAPI<T>(
 
   const response = await fetch(url, {
     ...options,
-    credentials: 'include', // important for CORS
+    credentials: 'omit', // important for CORS
   });
 
   if (!response.ok) {
