@@ -21,8 +21,8 @@ export function SecretLetterPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // ⚠️ TEMP (replace later with auth)
-  const userId = "USER_ID_HERE";
-  const spaceId = "SPACE_ID_HERE";
+  const userId = "your_mongodb_user_id";
+  const spaceId = "testspace1";
 
   // 🔥 fetch letters
   const fetchLetters = useCallback(async () => {
