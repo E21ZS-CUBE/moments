@@ -1,42 +1,38 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 export function SecretLetterPage() {
+  const API = import.meta.env.VITE_API_URL;
+
   const [letters, setLetters] = useState<any[]>([]);
   const [selectedLetter, setSelectedLetter] = useState<any | null>(null);
-  const [openedLetter, setOpenedLetter] = useState<any | null>(null);
-
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-
-  const [displayedText, setDisplayedText] = useState('');
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
-  // ✍️ NEW STATES (WRITE LETTER)
+  // ✍️ write states
   const [isWriting, setIsWriting] = useState(false);
-  const [newLetter, setNewLetter] = useState({
-    title: "",
-    content: "",
-    password: "",
-    sender: "John",
-    receiver: "Melina"
-  });
+  const [receiver, setReceiver] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
 
-  const typingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ✏️ edit mode
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // 🔥 Fetch letters
+  // ⚠️ TEMP (replace later with auth)
+  const userId = "USER_ID_HERE";
+  const spaceId = "SPACE_ID_HERE";
+
+  // 🔥 fetch letters
   const fetchLetters = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const data = await fetch(
-        `${import.meta.env.VITE_API_URL}/letters`
-      ).then(res => res.json());
+      const res = await fetch(
+        `${API}/letters?userId=${userId}&spaceId=${spaceId}`
+      );
+      const data = await res.json();
 
       setLetters(data);
       setIsLoading(false);
@@ -50,94 +46,74 @@ export function SecretLetterPage() {
     fetchLetters();
   }, [fetchLetters]);
 
-  // 🔐 Verify password
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  // ✉️ SEND / UPDATE LETTER
+  const sendLetter = async () => {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/letters/verify`,
-        {
+      if (!receiver || !subject || !body) {
+        alert("Fill all fields");
+        return;
+      }
+
+      if (editingId) {
+        // UPDATE
+        await fetch(`${API}/letters/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject, body })
+        });
+      } else {
+        // CREATE
+        await fetch(`${API}/letters`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            id: selectedLetter._id,
-            password
+            subject,
+            body,
+            senderId: userId,
+            receiverUsername: receiver,
+            spaceId
           })
-        }
-      );
+        });
+      }
 
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error);
-
-      setOpenedLetter(data);
-      setError(false);
-      setErrorMessage('');
-
-    } catch (err: any) {
-      setError(true);
-      setErrorMessage(err.message || 'Incorrect password');
-      setTimeout(() => setError(false), 500);
-    }
-  };
-
-  // ✍️ CREATE LETTER
-  const createLetter = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/letters`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newLetter)
-        }
-      );
-
-      if (!res.ok) throw new Error();
-
-      alert("Letter sent 💌");
-
-      setIsWriting(false);
-      setNewLetter({
-        title: "",
-        content: "",
-        password: "",
-        sender: "John",
-        receiver: "Melina"
-      });
-
+      resetForm();
       fetchLetters();
 
     } catch {
-      alert("Error creating letter");
+      alert("Error sending letter");
     }
   };
 
-  // ✨ Typing animation
-  useEffect(() => {
-    if (
-      openedLetter &&
-      displayedText.length < openedLetter.content.length
-    ) {
-      const timeout = setTimeout(() => {
-        setDisplayedText(
-          openedLetter.content.slice(0, displayedText.length + 1)
-        );
-      }, 40 + Math.random() * 30);
+  // 🗑 DELETE
+  const deleteLetter = async (id: string) => {
+    await fetch(`${API}/letters/${id}`, {
+      method: "DELETE"
+    });
 
-      typingRef.current = timeout;
+    fetchLetters();
+    setSelectedLetter(null);
+  };
 
-      return () => clearTimeout(timeout);
-    } else if (
-      openedLetter &&
-      displayedText.length === openedLetter.content.length
-    ) {
-      setIsTypingComplete(true);
-    }
-  }, [displayedText, openedLetter]);
+  // ✏️ EDIT LOAD
+  const startEdit = (letter: any) => {
+    setEditingId(letter._id);
+    setReceiver(letter.receiver?.username || '');
+    setSubject(letter.subject);
+    setBody(letter.body);
+    setIsWriting(true);
+    setSelectedLetter(null);
+  };
 
-  // 🔴 Error screen
+  // 🔄 RESET
+  const resetForm = () => {
+    setReceiver('');
+    setSubject('');
+    setBody('');
+    setEditingId(null);
+    setIsWriting(false);
+  };
+
+  // 🔴 error screen
   if (pageError && !isLoading) {
     return (
       <div className="text-center mt-20">
@@ -149,62 +125,58 @@ export function SecretLetterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex justify-center px-4">
       <div className="max-w-2xl w-full">
 
-        {/* ✍️ WRITE BUTTON */}
-        {!selectedLetter && !isWriting && (
+        {/* WRITE BUTTON */}
+        {!isWriting && !selectedLetter && (
           <button
             onClick={() => setIsWriting(true)}
             className="mb-6 px-4 py-2 bg-purple-500/20 text-purple-300 rounded-xl"
           >
-            Write Letter 💌
+            Write Letter ✉️
           </button>
         )}
 
-        {/* ✍️ WRITE UI */}
+        {/* WRITE UI */}
         {isWriting && (
           <div className="glass p-6 rounded-2xl mb-6 space-y-4">
 
-            <h2 className="text-white text-xl">Write a Letter 💌</h2>
+            <h2 className="text-white text-xl">
+              {editingId ? "Edit Letter ✏️" : "New Letter 💌"}
+            </h2>
 
             <input
-              placeholder="Title"
-              value={newLetter.title}
-              onChange={(e) =>
-                setNewLetter({ ...newLetter, title: e.target.value })
-              }
-              className="w-full p-2 rounded bg-white/10 text-white"
+              placeholder="To (username)"
+              value={receiver}
+              onChange={(e) => setReceiver(e.target.value)}
+              className="w-full p-2 bg-white/10 text-white rounded"
+            />
+
+            <input
+              placeholder="Subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full p-2 bg-white/10 text-white rounded"
             />
 
             <textarea
               placeholder="Write your message..."
-              value={newLetter.content}
-              onChange={(e) =>
-                setNewLetter({ ...newLetter, content: e.target.value })
-              }
-              className="w-full p-3 h-40 rounded bg-white/10 text-white"
-            />
-
-            <input
-              placeholder="Password"
-              value={newLetter.password}
-              onChange={(e) =>
-                setNewLetter({ ...newLetter, password: e.target.value })
-              }
-              className="w-full p-2 rounded bg-white/10 text-white"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="w-full h-40 p-3 bg-white/10 text-white rounded"
             />
 
             <div className="flex gap-3">
               <button
-                onClick={createLetter}
+                onClick={sendLetter}
                 className="bg-purple-500 px-4 py-2 rounded"
               >
-                Send 💌
+                {editingId ? "Update" : "Send"}
               </button>
 
               <button
-                onClick={() => setIsWriting(false)}
+                onClick={resetForm}
                 className="text-white/40"
               >
                 Cancel
@@ -213,90 +185,67 @@ export function SecretLetterPage() {
           </div>
         )}
 
-        {/* 🧾 LETTER LIST */}
+        {/* LIST */}
         {!selectedLetter && !isWriting && (
           <div className="space-y-4">
             <h2 className="text-white text-2xl text-center mb-4">
-              Your Letters 💌
+              Letters
             </h2>
 
             {letters.map((l) => (
               <div
                 key={l._id}
-                onClick={() => setSelectedLetter(l)}
                 className="p-4 glass rounded-xl cursor-pointer hover:bg-white/10"
+                onClick={() => setSelectedLetter(l)}
               >
-                <h3 className="text-white">{l.title}</h3>
+                <h3 className="text-white">{l.subject}</h3>
                 <p className="text-white/40 text-sm">
-                  {l.sender} → {l.receiver}
+                  {l.sender?.username} → {l.receiver?.username}
                 </p>
               </div>
             ))}
           </div>
         )}
 
-        {/* 🔐 PASSWORD */}
-        {selectedLetter && !openedLetter && (
-          <div className="text-center">
-            <Lock className="mx-auto text-purple-400 mb-4" />
-
-            <h2 className="text-white mb-4">
-              Unlock "{selectedLetter.title}"
-            </h2>
-
-            <form onSubmit={handleSubmit}>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="px-4 py-2 rounded bg-white/10 text-white"
-                placeholder="Enter password"
-              />
-
-              <button className="block mt-4 mx-auto bg-purple-500 px-4 py-2 rounded">
-                Unlock
-              </button>
-            </form>
-
-            {error && (
-              <p className="text-red-400 mt-2">
-                {errorMessage}
-              </p>
-            )}
-
-            <button
-              onClick={() => setSelectedLetter(null)}
-              className="mt-4 text-white/40"
-            >
-              ← back
-            </button>
-          </div>
-        )}
-
-        {/* 💌 VIEW */}
-        {openedLetter && (
+        {/* VIEW */}
+        {selectedLetter && (
           <motion.div className="glass p-8 rounded-2xl">
 
-            <h2 className="text-white text-2xl mb-4 text-center">
-              {openedLetter.title}
+            <h2 className="text-white text-2xl mb-2">
+              {selectedLetter.subject}
             </h2>
 
-            <div className="text-white/80 whitespace-pre-line">
-              {displayedText}
-              {!isTypingComplete && <span>|</span>}
+            <p className="text-white/40 mb-4">
+              {selectedLetter.sender?.username} → {selectedLetter.receiver?.username}
+            </p>
+
+            <div className="text-white/80 whitespace-pre-line mb-6">
+              {selectedLetter.body}
             </div>
 
-            <button
-              onClick={() => {
-                setOpenedLetter(null);
-                setSelectedLetter(null);
-                setDisplayedText('');
-                setIsTypingComplete(false);
-              }}
-              className="mt-6 text-white/40"
-            >
-              Close
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => startEdit(selectedLetter)}
+                className="text-blue-400"
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() => deleteLetter(selectedLetter._id)}
+                className="text-red-400"
+              >
+                Delete
+              </button>
+
+              <button
+                onClick={() => setSelectedLetter(null)}
+                className="text-white/40 ml-auto"
+              >
+                Close
+              </button>
+            </div>
+
           </motion.div>
         )}
 
