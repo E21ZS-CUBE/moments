@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
 export function SecretLetterPage() {
   const API = import.meta.env.VITE_API_URL;
@@ -20,19 +20,20 @@ export function SecretLetterPage() {
   // ✏️ edit mode
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // ✅ SAFE USER FETCH
+  // 🔽 MENU STATE
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // ✅ USER
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
 
   const userId = user?._id;
   const spaceId = "testspace1";
 
-  // 🔥 fetch letters (FIXED)
+  // 🔥 fetch letters
   const fetchLetters = useCallback(async () => {
     try {
-      // ❗ STOP IF USER NOT READY
       if (!userId) {
-        console.warn("User not logged in yet");
         setIsLoading(false);
         return;
       }
@@ -58,7 +59,7 @@ export function SecretLetterPage() {
     fetchLetters();
   }, [fetchLetters]);
 
-  // ✉️ SEND / UPDATE LETTER
+  // ✉️ SEND / UPDATE
   const sendLetter = async () => {
     try {
       if (!userId) {
@@ -101,10 +102,7 @@ export function SecretLetterPage() {
 
   // 🗑 DELETE
   const deleteLetter = async (id: string) => {
-    await fetch(`${API}/letters/${id}`, {
-      method: "DELETE"
-    });
-
+    await fetch(`${API}/letters/${id}`, { method: "DELETE" });
     fetchLetters();
     setSelectedLetter(null);
   };
@@ -127,6 +125,9 @@ export function SecretLetterPage() {
     setEditingId(null);
     setIsWriting(false);
   };
+
+  // 🔐 OWNER CHECK
+  const isOwner = selectedLetter?.sender?._id === userId;
 
   // 🔴 ERROR UI
   if (pageError && !isLoading) {
@@ -162,7 +163,6 @@ export function SecretLetterPage() {
         {/* WRITE UI */}
         {isWriting && (
           <div className="glass p-6 rounded-2xl mb-6 space-y-4">
-
             <h2 className="text-white text-xl">
               {editingId ? "Edit Letter ✏️" : "New Letter 💌"}
             </h2>
@@ -196,10 +196,7 @@ export function SecretLetterPage() {
                 {editingId ? "Update" : "Send"}
               </button>
 
-              <button
-                onClick={resetForm}
-                className="text-white/40"
-              >
+              <button onClick={resetForm} className="text-white/40">
                 Cancel
               </button>
             </div>
@@ -230,7 +227,43 @@ export function SecretLetterPage() {
 
         {/* VIEW */}
         {selectedLetter && (
-          <motion.div className="glass p-8 rounded-2xl">
+          <motion.div className="glass p-8 rounded-2xl relative">
+
+            {/* MENU */}
+            {isOwner && (
+              <div className="absolute top-4 right-4">
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="p-2 rounded-full hover:bg-white/10"
+                >
+                  <MoreVertical size={18} />
+                </button>
+
+                {menuOpen && (
+                  <div className="absolute right-0 mt-2 w-36 backdrop-blur-xl bg-white/10 border border-white/20 rounded-xl shadow-lg">
+                    <button
+                      onClick={() => {
+                        startEdit(selectedLetter);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 hover:bg-white/10 text-blue-300"
+                    >
+                      <Pencil size={16} /> Edit
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        deleteLetter(selectedLetter._id);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 hover:bg-white/10 text-red-300"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <h2 className="text-white text-2xl mb-2">
               {selectedLetter.subject}
@@ -244,28 +277,12 @@ export function SecretLetterPage() {
               {selectedLetter.body}
             </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => startEdit(selectedLetter)}
-                className="text-blue-400"
-              >
-                Edit
-              </button>
-
-              <button
-                onClick={() => deleteLetter(selectedLetter._id)}
-                className="text-red-400"
-              >
-                Delete
-              </button>
-
-              <button
-                onClick={() => setSelectedLetter(null)}
-                className="text-white/40 ml-auto"
-              >
-                Close
-              </button>
-            </div>
+            <button
+              onClick={() => setSelectedLetter(null)}
+              className="text-white/40"
+            >
+              Close
+            </button>
 
           </motion.div>
         )}
