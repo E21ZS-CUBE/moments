@@ -67,7 +67,9 @@ router.put('/:id', async (req, res) => {
 // DELETE
 //
 router.delete('/:id', async (req, res) => {
-  await Letter.findByIdAndDelete(req.params.id);
+  await Letter.findByIdAndUpdate(req.params.id, {
+  deleted: true
+  });
   res.json({ message: "Deleted" });
 });
 
