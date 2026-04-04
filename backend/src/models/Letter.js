@@ -1,33 +1,20 @@
 const mongoose = require('mongoose');
 
 const letterSchema = new mongoose.Schema({
-  subject: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  body: {
-    type: String,
-    required: true
-  },
+  subject: String,
+  body: String,
 
   sender: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
   },
 
   receiver: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    ref: 'User'
   },
 
-  spaceId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Space',
-    required: true
-  }
+  spaceId: String
 
 }, { timestamps: true });
 
