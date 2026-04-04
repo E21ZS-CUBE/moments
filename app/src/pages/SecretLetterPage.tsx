@@ -147,6 +147,14 @@ export function SecretLetterPage() {
           </button>
         </div>
 
+        if (isLoading) {
+        return (
+          <div className="min-h-screen flex items-center justify-center text-white/60">
+          Loading letters...
+          </div>
+          );
+        }
+
         {/* WRITE */}
         {isWriting && (
           <div className="glass p-6 rounded-xl mb-6 space-y-3">
