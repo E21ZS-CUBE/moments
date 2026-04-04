@@ -21,7 +21,8 @@ export function SecretLetterPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // ⚠️ TEMP (replace later with auth)
-  const userId = "your_mongodb_user_id";
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userId = user._id;
   const spaceId = "testspace1";
 
   // 🔥 fetch letters
