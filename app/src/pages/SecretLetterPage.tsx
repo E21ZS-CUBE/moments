@@ -22,7 +22,7 @@ export function SecretLetterPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<'inbox' | 'sent' | 'deleted'>('inbox');
 
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const userId = user?._id;
   const username = user?.username;
   const spaceId = "testspace1";
@@ -120,10 +120,10 @@ export function SecretLetterPage() {
     return false;
   });
   
-  if (!user) {
+ if (loading || !user) {
   return (
     <div className="min-h-screen flex items-center justify-center text-white/60">
-      Please login...
+      Loading...
     </div>
   );
 }
