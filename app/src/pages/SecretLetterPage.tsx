@@ -28,15 +28,23 @@ export function SecretLetterPage() {
   const spaceId = "testspace1";
 
   const fetchLetters = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `${API}/letters?userId=${userId}&spaceId=${spaceId}`
-      );
-      const data = await res.json();
-      setLetters(data || []);
-    } catch {}
-    setIsLoading(false);
-  }, []);
+  if (!userId) return;
+
+  try {
+    const res = await fetch(
+      `${API}/letters?userId=${username}&spaceId=${spaceId}`
+    );
+
+    const data = await res.json();
+
+    setLetters(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error(err);
+    setLetters([]);
+  }
+
+  setIsLoading(false);
+}, [userId]);
 
   useEffect(() => {
     fetchLetters();
