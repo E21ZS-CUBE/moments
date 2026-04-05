@@ -3,43 +3,30 @@ const router = express.Router();
 const User = require('../models/User');
 
 //
-// CREATE USER (signup)
+// CREATE USER
 //
-router.post('/', async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
-    const { username, email } = req.body;
+    const { username } = req.body;
 
-    const existing = await User.findOne({ email });
-    if (existing) return res.json(existing);
+    if (!username) {
+      return res.status(400).json({ error: 'Username required' });
+    }
 
-    const user = new User({ username, email });
-    await user.save();
+    // find or create
+    let user = await User.findOne({ username });
+
+    if (!user) {
+      user = new User({ username });
+      await user.save();
+    }
 
     res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+  } catch (error) {
+    console.error('USER ERROR:', error);
+    res.status(500).json({ error: error.message });
   }
-});
-
-//
-// GET USERS (for autocomplete)
-//
-router.get('/', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-
-//
-// SEARCH USERS (IMPORTANT 🔥)
-//
-router.get('/search', async (req, res) => {
-  const { q } = req.query;
-
-  const users = await User.find({
-    username: { $regex: q, $options: 'i' }
-  }).limit(5);
-
-  res.json(users);
 });
 
 module.exports = router;
