@@ -28,8 +28,9 @@ const navItems: { id: Page; label: string; icon: any }[] = [
 export function Navigation({ currentPage, onPageChange }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -57,7 +58,7 @@ export function Navigation({ currentPage, onPageChange }: NavigationProps) {
               }
             `}
           >
-            {/* LOGO */}
+            {/* LEFT: LOGO */}
             <button
               onClick={() => onPageChange('home')}
               className="flex items-center gap-2"
@@ -70,7 +71,7 @@ export function Navigation({ currentPage, onPageChange }: NavigationProps) {
               </span>
             </button>
 
-            {/* NAV ITEMS */}
+            {/* CENTER: NAV */}
             <div className="hidden md:flex items-center gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -102,17 +103,43 @@ export function Navigation({ currentPage, onPageChange }: NavigationProps) {
               {/* MUSIC */}
               <MusicWidget />
 
-              {/* USER PROFILE */}
-              <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-xl bg-white/5 border border-white/10">
-                <div className="w-7 h-7 rounded-full bg-purple-500/30 flex items-center justify-center text-white text-sm">
+              {/* PROFILE */}
+              <div className="relative">
+                <div
+                  onClick={() => setProfileOpen(!profileOpen)}
+                  className="w-9 h-9 rounded-full bg-purple-500/30 flex items-center justify-center text-white cursor-pointer"
+                >
                   {user?.username?.[0]?.toUpperCase() || 'U'}
                 </div>
-                <span className="text-white/70 text-sm">
-                  {user?.username || 'Guest'}
-                </span>
+
+                <AnimatePresence>
+                  {profileOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-52 bg-slate-900 border border-white/10 rounded-xl p-4 shadow-lg"
+                    >
+                      <p className="text-white text-sm font-medium">
+                        {user?.username}
+                      </p>
+
+                      <p className="text-white/40 text-xs mb-3">
+                        {user?._id}
+                      </p>
+
+                      <button
+                        onClick={logout}
+                        className="w-full text-left text-red-400 hover:text-red-300 text-sm"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
-              {/* MOBILE BUTTON */}
+              {/* MOBILE MENU */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 border border-white/10"
@@ -126,7 +153,7 @@ export function Navigation({ currentPage, onPageChange }: NavigationProps) {
             </div>
           </div>
 
-          {/* MOBILE MENU */}
+          {/* MOBILE NAV */}
           <AnimatePresence>
             {isMobileMenuOpen && (
               <motion.div
@@ -137,6 +164,7 @@ export function Navigation({ currentPage, onPageChange }: NavigationProps) {
               >
                 {navItems.map((item) => {
                   const Icon = item.icon;
+
                   return (
                     <button
                       key={item.id}
