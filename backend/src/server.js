@@ -14,7 +14,6 @@ const app = express();
 //
 // ✅ SIMPLE + RELIABLE CORS (FIXED)
 //
-const cors = require('cors');
 
 app.use(cors({
   origin: true, // ✅ allow ALL origins safely
