@@ -47,8 +47,10 @@ export function SecretLetterPage() {
 }, [userId]);
 
   useEffect(() => {
+  if (userId) {
     fetchLetters();
-  }, [fetchLetters]);
+  }
+}, [userId]);
 
   // ✅ FIX: loading OUTSIDE JSX
   if (isLoading) {
