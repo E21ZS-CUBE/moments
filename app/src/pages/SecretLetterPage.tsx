@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 export function SecretLetterPage() {
   const API = import.meta.env.VITE_API_URL;
@@ -21,7 +22,9 @@ export function SecretLetterPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<'inbox' | 'sent' | 'deleted'>('inbox');
 
-  const userId = "demo-user";
+  const { user } = useAuth();
+  const userId = user?._id;
+  const username = user?.username;
   const spaceId = "testspace1";
 
   const fetchLetters = useCallback(async () => {
@@ -64,7 +67,7 @@ export function SecretLetterPage() {
         body: JSON.stringify({
           subject,
           body,
-          senderId: userId,
+          senderId: username,
           receiverUsername: receiver,
           spaceId
         })
@@ -106,7 +109,15 @@ export function SecretLetterPage() {
     if (tab === 'deleted') return l.deleted === true;
     return false;
   });
-
+  
+  if (!user) {
+  return (
+    <div className="min-h-screen flex items-center justify-center text-white/60">
+      Please login...
+    </div>
+  );
+}
+  
   return (
     <div className="min-h-screen flex">
 
