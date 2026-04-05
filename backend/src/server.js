@@ -14,27 +14,13 @@ const app = express();
 //
 // ✅ SIMPLE + RELIABLE CORS (FIXED)
 //
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://moments-ten-sooty.vercel.app',
-  'https://mnjmoments.vercel.app'
-];
+const cors = require('cors');
 
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-
-    // ✅ allow ALL vercel preview domains
-    if (
-      origin.includes('vercel.app') ||
-      allowedOrigins.includes(origin)
-    ) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('CORS blocked'));
-  },
-  credentials: true
+  origin: true, // ✅ allow ALL origins safely
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 //
