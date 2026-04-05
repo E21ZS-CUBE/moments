@@ -16,7 +16,7 @@ const app = express();
 //
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://moments-ten-sooty.vercel.app'
+  'https://moments-ten-sooty.vercel.app',
   'https://mnjmoments.vercel.app'
 ];
 
