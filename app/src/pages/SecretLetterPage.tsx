@@ -21,7 +21,6 @@ export function SecretLetterPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tab, setTab] = useState<'inbox' | 'sent' | 'deleted'>('inbox');
 
-  // ✅ TEMP USER FIX (until auth added)
   const userId = "demo-user";
   const spaceId = "testspace1";
 
@@ -32,15 +31,22 @@ export function SecretLetterPage() {
       );
       const data = await res.json();
       setLetters(data || []);
-      setIsLoading(false);
-    } catch {
-      setIsLoading(false);
-    }
+    } catch {}
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     fetchLetters();
   }, [fetchLetters]);
+
+  // ✅ FIX: loading OUTSIDE JSX
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-white/60">
+        Loading letters...
+      </div>
+    );
+  }
 
   const sendLetter = async () => {
     if (!receiver || !subject || !body) return;
@@ -94,7 +100,6 @@ export function SecretLetterPage() {
 
   const isOwner = selectedLetter?.sender?._id === userId;
 
-  // ✅ SAFE FILTER
   const filteredLetters = letters.filter((l) => {
     if (tab === 'inbox') return l.receiver && l.receiver._id === userId && !l.deleted;
     if (tab === 'sent') return l.sender && l.sender._id === userId && !l.deleted;
@@ -146,14 +151,6 @@ export function SecretLetterPage() {
             Write ✉️
           </button>
         </div>
-
-        if (isLoading) {
-        return (
-          <div className="min-h-screen flex items-center justify-center text-white/60">
-          Loading letters...
-          </div>
-          );
-        }
 
         {/* WRITE */}
         {isWriting && (
